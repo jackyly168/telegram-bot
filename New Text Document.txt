@@ -1,2 +1,0 @@
-cd C:\Users\USER\Desktop\bot
-python bot.py
