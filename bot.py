@@ -1,29 +1,37 @@
-import os
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import pandas as pd
-from rapidfuzz import fuzz
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
-# Load responses
-responses_df = pd.read_csv("responses.csv")
+# Load CSV
+responses_df = pd.read_csv(r"C:\Users\USER\Desktop\bot\responses.csv")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot is working! Send me a message.")
+# Start command
+def start(update, context):
+    update.message.reply_text("✅ Bot is working! Send me a message.")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Message handler
+def handle_message(update, context):
     text = update.message.text.lower()
-    found = False
+    response = None
     for _, row in responses_df.iterrows():
-        keyword = str(row["keyword"]).lower()
-        if fuzz.ratio(text, keyword) > 80:
-            await update.message.reply_text(row["response"])
-            found = True
+        if row['input'].lower() in text:
+            response = row['response']
             break
-    if not found:
-        await update.message.reply_text("Sorry, I don’t understand 🤔")
+    if response:
+        update.message.reply_text(response)
+    else:
+        update.message.reply_text("Sorry, I don’t understand 🤔")
+
+def main():
+    TOKEN = "8251217158:AAGCcdrKtqkdf7i_7YbKuljXsTRdTzZWjWY"
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
+    # Start bot
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+    main()
